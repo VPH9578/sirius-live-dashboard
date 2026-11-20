@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sirius TSC Live Account Report — 33849921</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        theme: {
+                            bg: '#0b0f19',
+                            card: '#121827',
+                            sidebar: '#0f1422',
+                            border: '#1e293b',
+                            accent: '#8b5cf6',
+                            green: '#10b981',
+                            red: '#ef4444',
+                            cyan: '#06b6d4',
+                            gold: '#f59e0b',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .glass-card {
+            background: rgba(18, 24, 39, 0.85);
+            border: 1px solid rgba(30, 41, 59, 0.9);
+            border-radius: 0.75rem;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #0b0f19 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        <!-- Header -->
+        <header class="glass-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                        <i class="fa-solid fa-bolt mr-1"></i>Sirius TSC Investor Update
+                    </span>
+                    <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40">MT5</span>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight" id="hdr-acc-name">33849921</h1>
+                <p class="text-xs text-slate-400">
+                    Snapshot Generated: <span class="text-slate-300 font-mono">2026-11-20 20:00:45</span>
+                     • Broker Time: <span class="text-slate-300 font-mono">22:00:40</span>
+                </p>
+            </div>
+            <div class="flex items-center gap-2 no-print">
+                <button onclick="window.print()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-print text-purple-400"></i>
+                    <span>Print / Save PDF</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Primary KPIs -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4" id="kpi-primary-grid"></section>
+
+        <!-- Growth & Performance Breakdown -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="kpi-secondary-grid"></section>
+
+        <!-- Equity Curve Chart -->
+        <section class="glass-card p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-purple-400"></i>
+                        Account Growth Curve
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Cumulative realized performance over time</p>
+                </div>
+                <div class="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-lg border border-slate-800 no-print" id="chart-mode-btns">
+                    <button onclick="setChartMode('trade')" data-mode="trade" class="chart-tab px-3 py-1 rounded text-xs font-semibold bg-purple-600 text-white">Trade-by-Trade</button>
+                    <button onclick="setChartMode('daily')" data-mode="daily" class="chart-tab px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white">Daily</button>
+                    <button onclick="setChartMode('weekly')" data-mode="weekly" class="chart-tab px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white">Weekly</button>
+                    <button onclick="setChartMode('monthly')" data-mode="monthly" class="chart-tab px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white">Monthly</button>
+                </div>
+            </div>
+            <div class="relative h-72 sm:h-80 w-full">
+                <canvas id="equityChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Provider Performance Leaderboard -->
+        <section class="glass-card p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i>
+                        Signal Provider Performance
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Click any provider row to filter the closed trade history below</p>
+                </div>
+                <button id="clear-provider-filter-btn" onclick="filterByProvider('')" class="hidden no-print px-2.5 py-1 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-semibold hover:bg-purple-500/30">
+                    <i class="fa-solid fa-xmark mr-1"></i>Clear Provider Filter
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <th class="py-2.5 px-3">Provider</th>
+                            <th class="py-2.5 px-3 text-right">Trades</th>
+                            <th class="py-2.5 px-3 text-right">Wins / Losses</th>
+                            <th class="py-2.5 px-3 text-right">Win Rate</th>
+                            <th class="py-2.5 px-3 text-right">Profit Factor</th>
+                            <th class="py-2.5 px-3 text-right">Net P&amp;L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="providers-tbody" class="divide-y divide-slate-800/60"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Active Open Positions -->
+        <section id="open-positions-section" class="glass-card p-5 space-y-4 hidden">
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-wave-square text-cyan-400"></i>
+                Active Open Positions (<span id="open-pos-count">0</span>)
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <th class="py-2.5 px-3">Provider</th>
+                            <th class="py-2.5 px-3">Symbol</th>
+                            <th class="py-2.5 px-3">Type</th>
+                            <th class="py-2.5 px-3 text-right">Volume</th>
+                            <th class="py-2.5 px-3 text-right">Open Price</th>
+                            <th class="py-2.5 px-3 text-right">SL / TP</th>
+                            <th class="py-2.5 px-3 text-right">Floating P&amp;L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positions-tbody" class="divide-y divide-slate-800/60"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Closed Trade History -->
+        <section class="glass-card p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i>
+                        Closed Trade History (<span id="trades-count">0</span>)
+                    </h2>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 no-print">
+                    <select id="trade-provider-filter" onchange="renderTrades()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                        <option value="">All Providers</option>
+                    </select>
+                    <input type="text" id="trade-search-input" oninput="renderTrades()" placeholder="Search symbol..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 w-40">
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead class="sticky top-0 bg-[#121827] z-10">
+                        <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <th class="py-2.5 px-3">Close Time</th>
+                            <th class="py-2.5 px-3">Provider</th>
+                            <th class="py-2.5 px-3">Symbol</th>
+                            <th class="py-2.5 px-3">Type</th>
+                            <th class="py-2.5 px-3 text-right">Volume</th>
+                            <th class="py-2.5 px-3 text-right">Open &rarr; Close</th>
+                            <th class="py-2.5 px-3 text-right">Net P&amp;L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trades-tbody" class="divide-y divide-slate-800/60"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="text-center text-[11px] text-slate-500 pt-4">
+            Generated by Sirius TSC Live Dashboard • Static Offline Investor Snapshot
+        </footer>
+    </div>
+
+    <script>
+        const REPORT_DATA = {"status": {"platform": "mt5", "active_account_id": "acc_1", "active_account_name": "33849921"}, "broker_time": "22:00:40", "account": {"balance": 45225.9, "starting_balance": 44528.97, "equity": 45367.13, "profit": 141.23, "total_profit": 732.93, "low_to_high_profit": 3869.72, "gain_pct": 1.65, "low_to_high_pct": 8.69, "daily_growth": {"profit": -1164.53, "pct": -2.62}, "monthly_growth": {"profit": 732.93, "pct": 1.65}, "yearly_growth": {"profit": 732.93, "pct": 1.65}, "currency": "$", "platform": "mt5", "bid": 3528.59, "ask": 3529.11, "spread": 51.99999999999818}, "providers": {"543": {"trades_count": 68, "deal_count": 95, "lots": 34.2, "avg_rr": 0.51, "rr_display": "1:2", "tp1_hits": 44, "tp2_hits": 34, "tp3_hits": 29, "sl_hits": 23, "win_rate": 65.7, "profit": 1759.1, "low_to_high_profit": 2583.72, "gain": 0.0, "settings": {"risk_mode": "percent", "risk_value": 1, "tp1_percent": 50, "tp2_percent": 30, "tp3_percent": 20, "tp1_close_percent": 50, "sl_tp1_strategy": "none", "sl_tp2_strategy": "ENTRY", "sl_tp3_strategy": "TP1", "sl_breakeven_at": "none", "spread_offset_entry": true, "spread_offset_tp": true, "spread_offset_sl": true, "always_use_min_lot": true, "name": "Gold Noir", "topic_id": 8, "account_id": "acc_1", "magic_number": 400943, "trading_enabled": true, "entry_zone_mode": "nearest", "max_lot": 10}, "name": "Gold Noir", "provider_name": "Gold Noir"}, "552": {"trades_count": 3, "deal_count": 6, "lots": 1.54, "avg_rr": 0.87, "rr_display": "1:1.2", "tp1_hits": 1, "tp2_hits": 1, "tp3_hits": 0, "sl_hits": 3, "win_rate": 25.0, "profit": -530.11, "low_to_high_profit": 530.11, "gain": 0.0, "settings": {"risk_mode": "percent", "risk_value": 1, "tp1_percent": 60, "tp2_percent": 30, "tp3_percent": 10, "tp1_close_percent": 60, "sl_tp1_strategy": "ENTRY", "sl_tp2_strategy": "TP1", "sl_tp3_strategy": "TP2", "sl_breakeven_at": "TP1", "spread_offset_entry": true, "spread_offset_tp": true, "spread_offset_sl": true, "always_use_min_lot": false, "name": "Inferno Forex", "topic_id": 0, "account_id": "acc_1", "magic_number": 400952, "trading_enabled": false, "entry_zone_mode": "furthest", "max_lot": 10}, "name": "Inferno Forex", "provider_name": "Inferno Forex"}, "551": {"trades_count": 6, "deal_count": 15, "lots": 3.11, "avg_rr": 0.25, "rr_display": "1:4", "tp1_hits": 3, "tp2_hits": 0, "tp3_hits": 0, "sl_hits": 3, "win_rate": 50.0, "profit": -496.06, "low_to_high_profit": 755.89, "gain": 0.0, "settings": {"risk_mode": "percent", "risk_value": 1, "tp1_percent": 60, "tp2_percent": 30, "tp3_percent": 10, "tp1_close_percent": 60, "sl_tp1_strategy": "ENTRY", "sl_tp2_strategy": "TP1", "sl_tp3_strategy": "TP2", "sl_breakeven_at": "TP1", "spread_offset_entry": true, "spread_offset_tp": true, "spread_offset_sl": true, "always_use_min_lot": false, "name": "The Golden Goose", "topic_id": 0, "account_id": "acc_1", "magic_number": 400951, "trading_enabled": false, "entry_zone_mode": "furthest", "max_lot": 10}, "name": "The Golden Goose", "provider_name": "The Golden Goose"}}, "positions": [{"ticket": 389232043, "symbol": "AUDUSD.sc", "type": "SHORT", "volume": 0.46, "price_open": 0.66556, "open_price": 0.66556, "sl": 0.66516, "tp": 0.66042, "profit": 106.15, "magic": 400951, "comment": "P551 T59 TP2", "provider_id": "951", "provider_name": "Provider 951", "tier": null}, {"ticket": 389232048, "symbol": "AUDUSD.sc", "type": "SHORT", "volume": 0.15, "price_open": 0.66555, "open_price": 0.66555, "sl": 0.66515, "tp": 0.65542, "profit": 34.47, "magic": 400951, "comment": "P551 T59 TP3", "provider_id": "951", "provider_name": "Provider 951", "tier": null}], "trades": [{"signal_id": "P551_T59", "provider_id": "551", "symbol": "AUDUSD.sc", "trade_type": "SELL", "lots": 0.92, "profit": 198.52, "status": "TP1", "close_time": 1795201506, "trades_count": 1, "sub_trades": [{"ticket": 318538965, "provider_id": "551", "symbol": "AUDUSD.sc", "trade_type": "SELL", "lots": 0.92, "open_time": 1795183859, "close_time": 1795201506, "open_price": 0.66556, "close_price": 0.6634, "profit": 198.52, "magic": 400951, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 0.663}], "provider_name": "The Golden Goose"}, {"signal_id": "P552_T65", "provider_id": "552", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.6, "profit": -463.0, "status": "SL", "close_time": 1795194898, "trades_count": 2, "sub_trades": [{"ticket": 318438381, "provider_id": "552", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.4, "open_time": 1795194636, "close_time": 1795194898, "open_price": 3566.65, "close_price": 3558.92, "profit": -309.2, "magic": 400952, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3577.0}, {"ticket": 318438382, "provider_id": "552", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.2, "open_time": 1795194636, "close_time": 1795194898, "open_price": 3566.61, "close_price": 3558.92, "profit": -153.8, "magic": 400952, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3577.0}], "provider_name": "Inferno Forex"}, {"signal_id": "P543_T64", "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 1.61, "profit": -817.05, "status": "TP3", "close_time": 1795192621, "trades_count": 11, "sub_trades": [{"ticket": 318281607, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.13, "open_time": 1795183531, "close_time": 1795185230, "open_price": 3571.27, "close_price": 3571.61, "profit": 4.42, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3575.0}, {"ticket": 318281629, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.09, "open_time": 1795183531, "close_time": 1795185231, "open_price": 3571.27, "close_price": 3571.62, "profit": 3.15, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3575.0}, {"ticket": 318349944, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.09, "open_time": 1795188450, "close_time": 1795189871, "open_price": 3555.1, "close_price": 3570.59, "profit": -139.41, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3555.0}, {"ticket": 318349945, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.14, "open_time": 1795188450, "close_time": 1795189871, "open_price": 3555.13, "close_price": 3570.59, "profit": -216.44, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3555.0}, {"ticket": 318349949, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.24, "open_time": 1795188450, "close_time": 1795189871, "open_price": 3555.13, "close_price": 3570.61, "profit": -371.52, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3555.0}, {"ticket": 318364990, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.23, "open_time": 1795190612, "close_time": 1795190711, "open_price": 3570.22, "close_price": 3565.52, "profit": 108.1, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3565.0}, {"ticket": 318373473, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.14, "open_time": 1795190612, "close_time": 1795191295, "open_price": 3570.22, "close_price": 3580.5, "profit": -143.92, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3565.0}, {"ticket": 318373495, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.09, "open_time": 1795190612, "close_time": 1795191295, "open_price": 3570.28, "close_price": 3580.56, "profit": -92.52, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3565.0}, {"ticket": 318391501, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.23, "open_time": 1795192528, "close_time": 1795192620, "open_price": 3570.18, "close_price": 3569.56, "profit": 14.26, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3565.0}, {"ticket": 318391513, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.14, "open_time": 1795192528, "close_time": 1795192621, "open_price": 3569.8, "close_price": 3569.08, "profit": 10.08, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3565.0}, {"ticket": 318391514, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.09, "open_time": 1795192529, "close_time": 1795192621, "open_price": 3569.74, "close_price": 3568.99, "profit": 6.75, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3565.0}], "provider_name": "Gold Noir"}, {"signal_id": "P551_T62", "provider_id": "551", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.21, "profit": -464.1, "status": "SL", "close_time": 1795191295, "trades_count": 3, "sub_trades": [{"ticket": 318373465, "provider_id": "551", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.06, "open_time": 1795189013, "close_time": 1795191295, "open_price": 3558.5, "close_price": 3580.5, "profit": -132.0, "magic": 400951, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3550.0}, {"ticket": 318373468, "provider_id": "551", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.13, "open_time": 1795189013, "close_time": 1795191295, "open_price": 3558.36, "close_price": 3580.5, "profit": -287.82, "magic": 400951, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3550.0}, {"ticket": 318373477, "provider_id": "551", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.02, "open_time": 1795189013, "close_time": 1795191295, "open_price": 3558.36, "close_price": 3580.5, "profit": -44.28, "magic": 400951, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3550.0}], "provider_name": "The Golden Goose"}, {"signal_id": "P543_T61", "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.47, "profit": -727.37, "status": "SL", "close_time": 1795189871, "trades_count": 1, "sub_trades": [], "provider_name": "Gold Noir"}, {"signal_id": "P543_T58", "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.44, "profit": 89.19, "status": "TP1", "close_time": 1795185231, "trades_count": 1, "sub_trades": [], "provider_name": "Gold Noir"}, {"signal_id": "P543_T63", "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "SELL", "lots": 0.22, "profit": 81.62, "status": "TP1", "close_time": 1795184368, "trades_count": 1, "sub_trades": [{"ticket": 318272400, "provider_id": "543", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.22, "open_time": 1795183531, "close_time": 1795184368, "open_price": 3571.27, "close_price": 3574.98, "profit": 81.62, "magic": 400943, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 3575.0}], "provider_name": "Gold Noir"}, {"signal_id": "T_318222056", "provider_id": "551", "symbol": "USDCHF.sc", "trade_type": "BUY", "lots": 0.26, "profit": 8.53, "status": "MANUAL", "close_time": 1795178593, "trades_count": 1, "sub_trades": [{"ticket": 318222056, "provider_id": "551", "symbol": "USDCHF.sc", "trade_type": "BUY", "lots": 0.26, "open_time": 1795005427, "close_time": 1795178593, "open_price": 0.84202, "close_price": 0.84205, "profit": 8.53, "magic": 0, "close_reason": "MANUAL", "account_id": "acc_1", "sl": 0.0, "tp": 0.845}], "provider_name": "The Golden Goose"}, {"signal_id": "T_318222057", "provider_id": "551", "symbol": "USDCHF.sc", "trade_type": "BUY", "lots": 0.53, "profit": 18.0, "status": "MANUAL", "close_time": 1795178593, "trades_count": 1, "sub_trades": [{"ticket": 318222057, "provider_id": "551", "symbol": "USDCHF.sc", "trade_type": "BUY", "lots": 0.53, "open_time": 1795005426, "close_time": 1795178593, "open_price": 0.84201, "close_price": 0.84205, "profit": 18.0, "magic": 0, "close_reason": "MANUAL", "account_id": "acc_1", "sl": 0.0, "tp": 0.845}], "provider_name": "The Golden Goose"}, {"signal_id": "P552_T57", "provider_id": "552", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.4, "profit": 406.11, "status": "TP2", "close_time": 1795178113, "trades_count": 2, "sub_trades": [{"ticket": 318203590, "provider_id": "552", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.27, "open_time": 1795175598, "close_time": 1795177064, "open_price": 3570.43, "close_price": 3577.44, "profit": 189.27, "magic": 400952, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 0.0}, {"ticket": 318216991, "provider_id": "552", "symbol": "XAUUSD.sc", "trade_type": "BUY", "lots": 0.13, "open_time": 1795175599, "close_time": 1795178113, "open_price": 3570.37, "close_price": 3587.05, "profit": 216.84, "magic": 400952, "close_reason": "TP/SL", "account_id": "acc_1", "sl": 0.0, "tp": 0.0}], "provider_name": "Inferno Forex"}], "graph": {"starting_balance": 44528.97, "trade_by_trade": [{"time": "2026-11-06T13:53:36", "profit": -171.99, "deal_profit": -171.99, "signal_id": "acc_1_P543_1793962377", "provider_id": "543"}, {"time": "2026-11-06T13:53:36", "profit": 21.17, "deal_profit": 193.16, "signal_id": "acc_1_P543_1793962814", "provider_id": "543"}, {"time": "2026-11-06T15:42:29", "profit": 106.01, "deal_profit": 84.84, "signal_id": "P543_T2", "provider_id": "543"}, {"time": "2026-11-06T15:42:29", "profit": 190.85, "deal_profit": 84.84, "signal_id": "acc_1_P543_1793972172", "provider_id": "543"}, {"time": "2026-11-09T15:02:39", "profit": 1193.81, "deal_profit": 1002.96, "signal_id": "P543_T3", "provider_id": "543"}, {"time": "2026-11-09T15:02:39", "profit": 2196.77, "deal_profit": 1002.96, "signal_id": "acc_1_P543_1794211796", "provider_id": "543"}, {"time": "2026-11-09T18:50:14", "profit": 2234.99, "deal_profit": 38.22, "signal_id": "P543_T13", "provider_id": "543"}, {"time": "2026-11-09T18:50:14", "profit": 2273.21, "deal_profit": 38.22, "signal_id": "acc_1_P543_1794242761", "provider_id": "543"}, {"time": "2026-11-10T12:15:27", "profit": 2352.1, "deal_profit": 78.89, "signal_id": "P543_T14", "provider_id": "543"}, {"time": "2026-11-10T12:33:10", "profit": 2456.31, "deal_profit": 104.21, "signal_id": "acc_1_P543_1794303814", "provider_id": "543"}, {"time": "2026-11-10T13:16:26", "profit": 2490.23, "deal_profit": 33.92, "signal_id": "P543_T16", "provider_id": "543"}, {"time": "2026-11-10T13:16:26", "profit": 2524.15, "deal_profit": 33.92, "signal_id": "acc_1_P543_1794309199", "provider_id": "543"}, {"time": "2026-11-10T15:54:40", "profit": 2544.3, "deal_profit": 20.15, "signal_id": "acc_1_P543_1794317523", "provider_id": "543"}, {"time": "2026-11-10T19:50:13", "profit": 2840.83, "deal_profit": 296.53, "signal_id": "P543_T20", "provider_id": "543"}, {"time": "2026-11-10T19:50:13", "profit": 3137.36, "deal_profit": 296.53, "signal_id": "acc_1_P543_1794330445", "provider_id": "543"}, {"time": "2026-11-11T14:06:52", "profit": 3267.76, "deal_profit": 130.4, "signal_id": "P543_T21", "provider_id": "543"}, {"time": "2026-11-11T14:06:52", "profit": 3398.16, "deal_profit": 130.4, "signal_id": "acc_1_P543_1794392696", "provider_id": "543"}, {"time": "2026-11-13T14:01:26", "profit": 2903.84, "deal_profit": -494.32, "signal_id": "P543_T24", "provider_id": "543"}, {"time": "2026-11-13T14:01:26", "profit": 2409.52, "deal_profit": -494.32, "signal_id": "acc_1_P543_1794565269", "provider_id": "543"}, {"time": "2026-11-16T11:28:51", "profit": 1919.0, "deal_profit": -490.52, "signal_id": "P543_T28", "provider_id": "543"}, {"time": "2026-11-16T11:28:51", "profit": 1428.48, "deal_profit": -490.52, "signal_id": "acc_1_P543_1794821045", "provider_id": "543"}, {"time": "2026-11-16T12:32:01", "profit": 1450.8, "deal_profit": 22.32, "signal_id": "P543_T29", "provider_id": "543"}, {"time": "2026-11-16T12:32:01", "profit": 1473.12, "deal_profit": 22.32, "signal_id": "acc_1_P543_1794822622", "provider_id": "543"}, {"time": "2026-11-16T14:09:33", "profit": 1717.55, "deal_profit": 244.43, "signal_id": "P543_T30", "provider_id": "543"}, {"time": "2026-11-16T14:09:33", "profit": 1961.98, "deal_profit": 244.43, "signal_id": "acc_1_P543_1794827351", "provider_id": "543"}, {"time": "2026-11-16T17:17:14", "profit": 2023.85, "deal_profit": 61.87, "signal_id": "P543_T31", "provider_id": "543"}, {"time": "2026-11-16T17:30:18", "profit": 2152.15, "deal_profit": 128.3, "signal_id": "P543_T32", "provider_id": "543"}, {"time": "2026-11-16T17:30:18", "profit": 2280.45, "deal_profit": 128.3, "signal_id": "acc_1_P543_1794835717", "provider_id": "543"}, {"time": "2026-11-16T17:59:38", "profit": 2395.87, "deal_profit": 115.42, "signal_id": "acc_1_P543_1794832873", "provider_id": "543"}, {"time": "2026-11-16T18:35:30", "profit": 2635.0, "deal_profit": 239.13, "signal_id": "P543_T33", "provider_id": "543"}, {"time": "2026-11-16T18:35:30", "profit": 2874.13, "deal_profit": 239.13, "signal_id": "acc_1_P543_1794843465", "provider_id": "543"}, {"time": "2026-11-16T20:28:17", "profit": 2886.55, "deal_profit": 12.42, "signal_id": "P543_T34", "provider_id": "543"}, {"time": "2026-11-16T20:28:17", "profit": 2898.97, "deal_profit": 12.42, "signal_id": "acc_1_P543_1794852656", "provider_id": "543"}, {"time": "2026-11-17T14:37:42", "profit": 2921.42, "deal_profit": 22.45, "signal_id": "P543_T36", "provider_id": "543"}, {"time": "2026-11-17T14:37:42", "profit": 2943.87, "deal_profit": 22.45, "signal_id": "acc_1_P543_1794918143", "provider_id": "543"}, {"time": "2026-11-17T16:17:24", "profit": 3034.97, "deal_profit": 91.1, "signal_id": "P543_T37", "provider_id": "543"}, {"time": "2026-11-17T16:17:24", "profit": 3126.07, "deal_profit": 91.1, "signal_id": "acc_1_P543_1794924572", "provider_id": "543"}, {"time": "2026-11-17T17:05:22", "profit": 3186.79, "deal_profit": 60.72, "signal_id": "P543_T38", "provider_id": "543"}, {"time": "2026-11-17T17:05:22", "profit": 3247.51, "deal_profit": 60.72, "signal_id": "acc_1_P543_1794925753", "provider_id": "543"}, {"time": "2026-11-17T19:25:02", "profit": 3603.92, "deal_profit": 356.41, "signal_id": "P543_T39", "provider_id": "543"}, {"time": "2026-11-17T19:25:02", "profit": 3960.33, "deal_profit": 356.41, "signal_id": "acc_1_P543_1794935818", "provider_id": "543"}, {"time": "2026-11-18T14:18:34", "profit": 4259.4, "deal_profit": 299.07, "signal_id": "P543_T41", "provider_id": "543"}, {"time": "2026-11-18T14:18:34", "profit": 4558.47, "deal_profit": 299.07, "signal_id": "acc_1_P543_1795001980", "provider_id": "543"}, {"time": "2026-11-18T18:43:02", "profit": 4548.35, "deal_profit": -10.12, "signal_id": "P543_T45", "provider_id": "543"}, {"time": "2026-11-18T18:43:26", "profit": 4547.6, "deal_profit": -0.75, "signal_id": "acc_1_P543_1795020008", "provider_id": "543"}, {"time": "2026-11-19T12:13:49", "profit": 4045.17, "deal_profit": -502.43, "signal_id": "P543_T46", "provider_id": "543"}, {"time": "2026-11-19T12:13:49", "profit": 3542.74, "deal_profit": -502.43, "signal_id": "acc_1_P543_1795081656", "provider_id": "543"}, {"time": "2026-11-19T16:51:08", "profit": 3604.05, "deal_profit": 61.31, "signal_id": "acc_1_P551_T48", "provider_id": "551"}, {"time": "2026-11-20T10:10:19", "profit": 3705.47, "deal_profit": 101.42, "signal_id": "T_318023891", "provider_id": "543"}, {"time": "2026-11-20T10:40:20", "profit": 3572.14, "deal_profit": -133.33, "signal_id": "P543_T50", "provider_id": "543"}, {"time": "2026-11-20T10:40:20", "profit": 3431.35, "deal_profit": -140.79, "signal_id": "T_318048076", "provider_id": "543"}, {"time": "2026-11-20T10:40:20", "profit": 3337.39, "deal_profit": -93.96, "signal_id": "T_318048094", "provider_id": "543"}, {"time": "2026-11-20T10:40:20", "profit": 3454.0, "deal_profit": 116.61, "signal_id": "T_318048102", "provider_id": "543"}, {"time": "2026-11-20T11:34:06", "profit": 2980.78, "deal_profit": -473.22, "signal_id": "P552_T53", "provider_id": "552"}, {"time": "2026-11-20T11:34:06", "profit": 2822.2, "deal_profit": -158.58, "signal_id": "T_318088004", "provider_id": "552"}, {"time": "2026-11-20T11:34:06", "profit": 2507.56, "deal_profit": -314.64, "signal_id": "T_318088025", "provider_id": "552"}, {"time": "2026-11-20T11:34:20", "profit": 2649.66, "deal_profit": 142.1, "signal_id": "T_318088470", "provider_id": "543"}, {"time": "2026-11-20T11:40:58", "profit": 2917.64, "deal_profit": 267.98, "signal_id": "P543_T52", "provider_id": "543"}, {"time": "2026-11-20T11:40:58", "profit": 2926.91, "deal_profit": 9.27, "signal_id": "T_318095992", "provider_id": "543"}, {"time": "2026-11-20T11:52:27", "profit": 2455.82, "deal_profit": -471.09, "signal_id": "P551_T51", "provider_id": "551"}, {"time": "2026-11-20T11:52:27", "profit": 2178.52, "deal_profit": -277.3, "signal_id": "T_318110043", "provider_id": "551"}, {"time": "2026-11-20T11:52:27", "profit": 2123.18, "deal_profit": -55.34, "signal_id": "T_318110054", "provider_id": "551"}, {"time": "2026-11-20T11:52:27", "profit": 1984.73, "deal_profit": -138.45, "signal_id": "T_318110068", "provider_id": "551"}, {"time": "2026-11-20T12:25:10", "profit": 2082.08, "deal_profit": 97.35, "signal_id": "P551_T54", "provider_id": "551"}, {"time": "2026-11-20T12:25:10", "profit": 2143.24, "deal_profit": 61.16, "signal_id": "T_318130185", "provider_id": "543"}, {"time": "2026-11-20T12:25:10", "profit": 2240.59, "deal_profit": 97.35, "signal_id": "T_318130196", "provider_id": "551"}, {"time": "2026-11-20T12:28:05", "profit": 2343.42, "deal_profit": 102.83, "signal_id": "T_318132478", "provider_id": "543"}, {"time": "2026-11-20T12:30:02", "profit": 2621.35, "deal_profit": 277.93, "signal_id": "P543_T55", "provider_id": "543"}, {"time": "2026-11-20T12:30:02", "profit": 2735.29, "deal_profit": 113.94, "signal_id": "T_318134196", "provider_id": "543"}, {"time": "2026-11-20T12:43:40", "profit": 2805.67, "deal_profit": 70.38, "signal_id": "T_318141360", "provider_id": "543"}, {"time": "2026-11-20T12:46:26", "profit": 2885.33, "deal_profit": 79.66, "signal_id": "T_318144425", "provider_id": "543"}, {"time": "2026-11-20T13:03:35", "profit": 2926.49, "deal_profit": 41.16, "signal_id": "T_318153716", "provider_id": "551"}, {"time": "2026-11-20T13:03:37", "profit": 2940.75, "deal_profit": 14.26, "signal_id": "T_318153718", "provider_id": "551"}, {"time": "2026-11-20T13:06:10", "profit": 3186.55, "deal_profit": 245.8, "signal_id": "P543_T56", "provider_id": "543"}, {"time": "2026-11-20T13:06:10", "profit": 3282.31, "deal_profit": 95.76, "signal_id": "T_318155825", "provider_id": "543"}, {"time": "2026-11-20T14:17:44", "profit": 3471.58, "deal_profit": 189.27, "signal_id": "T_318203590", "provider_id": "552"}, {"time": "2026-11-20T14:35:13", "profit": 3877.69, "deal_profit": 406.11, "signal_id": "P552_T57", "provider_id": "552"}, {"time": "2026-11-20T14:35:13", "profit": 4094.53, "deal_profit": 216.84, "signal_id": "T_318216991", "provider_id": "552"}, {"time": "2026-11-20T14:43:13", "profit": 4103.06, "deal_profit": 8.53, "signal_id": "T_318222056", "provider_id": "551"}, {"time": "2026-11-20T14:43:13", "profit": 4121.06, "deal_profit": 18.0, "signal_id": "T_318222057", "provider_id": "551"}, {"time": "2026-11-20T16:19:28", "profit": 4202.68, "deal_profit": 81.62, "signal_id": "T_318272400", "provider_id": "543"}, {"time": "2026-11-20T16:33:50", "profit": 4207.1, "deal_profit": 4.42, "signal_id": "T_318281607", "provider_id": "543"}, {"time": "2026-11-20T16:33:51", "profit": 4296.29, "deal_profit": 89.19, "signal_id": "P543_T58", "provider_id": "543"}, {"time": "2026-11-20T16:33:51", "profit": 4299.44, "deal_profit": 3.15, "signal_id": "T_318281629", "provider_id": "543"}, {"time": "2026-11-20T17:51:11", "profit": 3572.07, "deal_profit": -727.37, "signal_id": "P543_T61", "provider_id": "543"}, {"time": "2026-11-20T17:51:11", "profit": 3432.66, "deal_profit": -139.41, "signal_id": "T_318349944", "provider_id": "543"}, {"time": "2026-11-20T17:51:11", "profit": 3216.22, "deal_profit": -216.44, "signal_id": "T_318349945", "provider_id": "543"}, {"time": "2026-11-20T17:51:11", "profit": 2844.7, "deal_profit": -371.52, "signal_id": "T_318349949", "provider_id": "543"}, {"time": "2026-11-20T18:05:11", "profit": 2952.8, "deal_profit": 108.1, "signal_id": "T_318364990", "provider_id": "543"}, {"time": "2026-11-20T18:14:55", "profit": 2488.7, "deal_profit": -464.1, "signal_id": "P551_T62", "provider_id": "551"}, {"time": "2026-11-20T18:14:55", "profit": 2360.36, "deal_profit": -128.34, "signal_id": "P543_T63", "provider_id": "543"}, {"time": "2026-11-20T18:14:55", "profit": 2216.44, "deal_profit": -143.92, "signal_id": "T_318373473", "provider_id": "543"}, {"time": "2026-11-20T18:14:55", "profit": 2123.92, "deal_profit": -92.52, "signal_id": "T_318373495", "provider_id": "543"}, {"time": "2026-11-20T18:14:55", "profit": 1991.92, "deal_profit": -132.0, "signal_id": "T_318373465", "provider_id": "551"}, {"time": "2026-11-20T18:14:55", "profit": 1704.1, "deal_profit": -287.82, "signal_id": "T_318373468", "provider_id": "551"}, {"time": "2026-11-20T18:14:55", "profit": 1659.82, "deal_profit": -44.28, "signal_id": "T_318373477", "provider_id": "551"}, {"time": "2026-11-20T18:37:00", "profit": 1674.08, "deal_profit": 14.26, "signal_id": "T_318391501", "provider_id": "543"}, {"time": "2026-11-20T18:37:01", "profit": 1705.17, "deal_profit": 31.09, "signal_id": "P543_T64", "provider_id": "543"}, {"time": "2026-11-20T18:37:01", "profit": 1715.25, "deal_profit": 10.08, "signal_id": "T_318391513", "provider_id": "543"}, {"time": "2026-11-20T18:37:01", "profit": 1722.0, "deal_profit": 6.75, "signal_id": "T_318391514", "provider_id": "543"}, {"time": "2026-11-20T19:14:58", "profit": 1259.0, "deal_profit": -463.0, "signal_id": "P552_T65", "provider_id": "552"}, {"time": "2026-11-20T19:14:58", "profit": 949.8, "deal_profit": -309.2, "signal_id": "T_318438381", "provider_id": "552"}, {"time": "2026-11-20T19:14:58", "profit": 796.0, "deal_profit": -153.8, "signal_id": "T_318438382", "provider_id": "552"}, {"time": "2026-11-20T21:05:06", "profit": 994.52, "deal_profit": 198.52, "signal_id": "P551_T59", "provider_id": "551"}, {"time": "2026-11-20T21:05:06", "profit": 1193.04, "deal_profit": 198.52, "signal_id": "T_318538965", "provider_id": "551"}], "daily": {"2026-11-06": 190.85, "2026-11-09": 2082.36, "2026-11-10": 864.15, "2026-11-11": 260.8, "2026-11-13": -988.64, "2026-11-16": 489.45, "2026-11-17": 1061.36, "2026-11-18": 587.27, "2026-11-19": -943.55, "2026-11-20": -2411.01}, "weekly": {"2026-W45": 190.85, "2026-W46": 2218.67, "2026-W47": -1216.48}, "monthly": {"2026-11": 1193.04}}};
+        let chartInstance = null;
+        let currentChartMode = 'trade';
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function fmtMoney(val, currency = '$') {
+            const n = Number(val || 0);
+            const sign = n < 0 ? '-' : (n > 0 ? '+' : '');
+            return `${sign}${currency}${Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function fmtBal(val, currency = '$') {
+            const n = Number(val || 0);
+            return `${currency}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function fmtPct(val) {
+            const n = Number(val || 0);
+            const sign = n > 0 ? '+' : '';
+            return `${sign}${n.toFixed(2)}%`;
+        }
+
+        function fmtTime(ts) {
+            if (!ts) return '—';
+            const d = typeof ts === 'number' ? new Date(ts > 1e12 ? ts : ts * 1000) : new Date(ts);
+            if (isNaN(d.getTime())) return String(ts);
+            return d.toISOString().replace('T', ' ').slice(0, 16);
+        }
+
+        function renderKPIs() {
+            const acc = REPORT_DATA.account || {};
+            const cur = acc.currency || '$';
+            const trades = REPORT_DATA.trades || [];
+            const positions = REPORT_DATA.positions || [];
+
+            const startBal = Number(acc.starting_balance ?? acc.balance ?? 0);
+            const curBal = Number(acc.balance ?? 0);
+            const equity = Number(acc.equity ?? curBal);
+            const totalPnl = Number(acc.total_profit ?? (curBal - startBal));
+            const gainPct = Number(acc.gain_pct ?? (startBal > 0 ? (totalPnl / startBal) * 100 : 0));
+
+            let wins = 0, losses = 0, grossWin = 0, grossLoss = 0;
+            trades.forEach(t => {
+                const p = Number(t.profit || 0) + Number(t.swap || 0) + Number(t.commission || 0);
+                if (p > 0) { wins++; grossWin += p; }
+                else if (p < 0) { losses++; grossLoss += Math.abs(p); }
+            });
+            const totalClosed = trades.length;
+            const winRate = (wins + losses) > 0 ? (wins / (wins + losses)) * 100 : 0;
+            const pf = grossLoss > 0 ? (grossWin / grossLoss) : (grossWin > 0 ? 99.99 : 0);
+
+            const pnlColor = totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400';
+            const gainColor = gainPct >= 0 ? 'text-emerald-400' : 'text-rose-400';
+
+            const primary = [
+                { label: 'Starting Balance', value: fmtBal(startBal, cur), sub: 'Initial Capital', cls: 'text-white' },
+                { label: 'Current Balance', value: fmtBal(curBal, cur), sub: `Equity: ${fmtBal(equity, cur)}`, cls: 'text-white' },
+                { label: 'Total Realized P&L', value: fmtMoney(totalPnl, cur), sub: `${totalClosed} Closed Trades`, cls: pnlColor },
+                { label: 'Total Return', value: fmtPct(gainPct), sub: `${positions.length} Open Positions`, cls: gainColor },
+            ];
+
+            document.getElementById('kpi-primary-grid').innerHTML = primary.map(k => `
+                <div class="glass-card p-4">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${k.label}</div>
+                    <div class="text-lg sm:text-2xl font-extrabold font-mono mt-1 ${k.cls}">${k.value}</div>
+                    <div class="text-[11px] text-slate-400 mt-1">${k.sub}</div>
+                </div>
+            `).join('');
+
+            const daily = acc.daily_growth || {};
+            const monthly = acc.monthly_growth || {};
+            const yearly = acc.yearly_growth || {};
+
+            const secondary = [
+                { label: 'Win Rate', value: `${winRate.toFixed(1)}%`, cls: winRate >= 50 ? 'text-emerald-400' : 'text-amber-400' },
+                { label: 'Profit Factor', value: pf >= 99 ? '∞' : pf.toFixed(2), cls: pf >= 1.2 ? 'text-emerald-400' : 'text-slate-200' },
+                { label: 'Wins / Losses', value: `${wins} / ${losses}`, cls: 'text-slate-200' },
+                { label: 'Daily Growth', value: fmtPct(daily.pct || 0), cls: (daily.pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+                { label: 'Monthly Growth', value: fmtPct(monthly.pct || 0), cls: (monthly.pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+                { label: 'Yearly Growth', value: fmtPct(yearly.pct || 0), cls: (yearly.pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+            ];
+
+            document.getElementById('kpi-secondary-grid').innerHTML = secondary.map(k => `
+                <div class="glass-card p-3">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${k.label}</div>
+                    <div class="text-sm sm:text-base font-bold font-mono mt-0.5 ${k.cls}">${k.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function setChartMode(mode) {
+            currentChartMode = mode;
+            document.querySelectorAll('.chart-tab').forEach(btn => {
+                if (btn.dataset.mode === mode) {
+                    btn.className = 'chart-tab px-3 py-1 rounded text-xs font-semibold bg-purple-600 text-white';
+                } else {
+                    btn.className = 'chart-tab px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white';
+                }
+            });
+            renderChart();
+        }
+
+        function renderChart() {
+            const graph = REPORT_DATA.graph || {};
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            let labels = [];
+            let values = [];
+            let isBar = false;
+
+            if (currentChartMode === 'trade') {
+                const pts = graph.trade_by_trade || [];
+                labels = pts.map((p, idx) => p.label || p.time_str || `#${idx + 1}`);
+                values = pts.map(p => Number(p.cumulative_profit ?? p.cum_profit ?? p.profit ?? 0));
+            } else {
+                isBar = true;
+                const bucket = graph[currentChartMode] || {};
+                if (Array.isArray(bucket)) {
+                    labels = bucket.map(b => b.label || b.date || '');
+                    values = bucket.map(b => Number(b.profit ?? b.pnl ?? 0));
+                } else {
+                    labels = Object.keys(bucket).sort();
+                    values = labels.map(k => {
+                        const v = bucket[k];
+                        return typeof v === 'object' && v !== null ? Number(v.profit ?? v.pnl ?? 0) : Number(v || 0);
+                    });
+                }
+            }
+
+            if (labels.length === 0) {
+                labels = ['Start'];
+                values = [0];
+            }
+
+            const lastVal = values[values.length - 1] || 0;
+            const lineColor = lastVal >= 0 ? '#10b981' : '#ef4444';
+
+            chartInstance = new Chart(ctx, {
+                type: isBar ? 'bar' : 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: isBar ? 'Period P&L ($)' : 'Cumulative P&L ($)',
+                        data: values,
+                        borderColor: isBar ? values.map(v => v >= 0 ? '#10b981' : '#ef4444') : lineColor,
+                        backgroundColor: isBar
+                            ? values.map(v => v >= 0 ? 'rgba(16, 185, 129, 0.55)' : 'rgba(239, 68, 68, 0.55)')
+                            : (lastVal >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'),
+                        borderWidth: 2,
+                        fill: !isBar,
+                        tension: 0.25,
+                        pointRadius: labels.length > 80 ? 0 : 2.5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#f8fafc',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8', maxTicksLimit: 10, font: { size: 10 } },
+                            grid: { color: 'rgba(30, 41, 59, 0.4)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => '$' + v },
+                            grid: { color: 'rgba(30, 41, 59, 0.5)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderProviders() {
+            const providers = REPORT_DATA.providers || [];
+            const tbody = document.getElementById('providers-tbody');
+            const select = document.getElementById('trade-provider-filter');
+            const cur = (REPORT_DATA.account || {}).currency || '$';
+
+            const list = Array.isArray(providers) ? providers : Object.values(providers);
+            list.sort((a, b) => Number(b.net_profit ?? b.total_profit ?? b.profit ?? 0) - Number(a.net_profit ?? a.total_profit ?? a.profit ?? 0));
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">No provider statistics available for this account.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(p => {
+                const name = p.name || p.provider_name || `Provider ${p.id || ''}`;
+                const trades = Number(p.total_trades ?? p.trades ?? 0);
+                const wins = Number(p.wins ?? 0);
+                const losses = Number(p.losses ?? Math.max(0, trades - wins));
+                const wr = Number(p.win_rate ?? (trades > 0 ? (wins / trades) * 100 : 0));
+                const pf = Number(p.profit_factor ?? 0);
+                const pnl = Number(p.net_profit ?? p.total_profit ?? p.profit ?? 0);
+                const pnlCls = pnl >= 0 ? 'text-emerald-400' : 'text-rose-400';
+
+                return `
+                    <tr onclick="filterByProvider('${escapeHtml(name).replace(/'/g, "\\'")}')" class="hover:bg-slate-800/40 cursor-pointer transition">
+                        <td class="py-2.5 px-3 font-semibold text-white">${escapeHtml(name)}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-300">${trades}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-400">${wins}W / ${losses}L</td>
+                        <td class="py-2.5 px-3 text-right font-mono ${wr >= 50 ? 'text-emerald-400' : 'text-amber-400'}">${wr.toFixed(1)}%</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-300">${pf > 0 ? pf.toFixed(2) : '—'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold ${pnlCls}">${fmtMoney(pnl, cur)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Populate dropdown filter
+            const names = [...new Set(list.map(p => p.name || p.provider_name).filter(Boolean))];
+            select.innerHTML = '<option value="">All Providers</option>' + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+        }
+
+        function filterByProvider(name) {
+            const select = document.getElementById('trade-provider-filter');
+            select.value = name;
+            document.getElementById('clear-provider-filter-btn').classList.toggle('hidden', !name);
+            renderTrades();
+        }
+
+        function renderPositions() {
+            const positions = REPORT_DATA.positions || [];
+            const sec = document.getElementById('open-positions-section');
+            const cur = (REPORT_DATA.account || {}).currency || '$';
+
+            if (!positions.length) {
+                sec.classList.add('hidden');
+                return;
+            }
+            sec.classList.remove('hidden');
+            document.getElementById('open-pos-count').textContent = positions.length;
+
+            document.getElementById('positions-tbody').innerHTML = positions.map(p => {
+                const pnl = Number(p.profit || 0);
+                const dir = String(p.type_str || p.type || '').toUpperCase();
+                const isBuy = dir.includes('BUY') || p.type === 0;
+                return `
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="py-2.5 px-3 font-medium text-white">${escapeHtml(p.provider_name || 'Manual / Unknown')}</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-slate-200">${escapeHtml(p.symbol || '—')}</td>
+                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isBuy ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${isBuy ? 'BUY' : 'SELL'}</span></td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-300">${Number(p.volume || 0).toFixed(2)}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-300">${Number(p.price_open ?? p.open_price ?? 0).toFixed(2)}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-400">${p.sl ? Number(p.sl).toFixed(2) : '—'} / ${p.tp ? Number(p.tp).toFixed(2) : '—'}</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtMoney(pnl, cur)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderTrades() {
+            const trades = REPORT_DATA.trades || [];
+            const provFilter = document.getElementById('trade-provider-filter').value;
+            const search = (document.getElementById('trade-search-input').value || '').trim().toLowerCase();
+            const cur = (REPORT_DATA.account || {}).currency || '$';
+
+            document.getElementById('clear-provider-filter-btn').classList.toggle('hidden', !provFilter);
+
+            const filtered = trades.filter(t => {
+                const pName = String(t.provider_name || 'Manual / Unknown');
+                const sym = String(t.symbol || '').toLowerCase();
+                if (provFilter && pName !== provFilter) return false;
+                if (search && !sym.includes(search) && !pName.toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            document.getElementById('trades-count').textContent = filtered.length;
+            const tbody = document.getElementById('trades-tbody');
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No closed trades match the current filter.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.slice(0, 500).map(t => {
+                const pnl = Number(t.profit || 0) + Number(t.swap || 0) + Number(t.commission || 0);
+                const dir = String(t.type || t.direction || '').toUpperCase();
+                const isBuy = dir.includes('BUY') || dir === '0';
+                const openP = t.open_price != null ? Number(t.open_price).toFixed(2) : '—';
+                const closeP = t.close_price != null ? Number(t.close_price).toFixed(2) : '—';
+                return `
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="py-2 px-3 font-mono text-slate-400 whitespace-nowrap">${fmtTime(t.close_time || t.open_time)}</td>
+                        <td class="py-2 px-3 font-medium text-white">${escapeHtml(t.provider_name || 'Manual / Unknown')}</td>
+                        <td class="py-2 px-3 font-mono font-bold text-slate-200">${escapeHtml(t.symbol || '—')}</td>
+                        <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isBuy ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${isBuy ? 'BUY' : 'SELL'}</span></td>
+                        <td class="py-2 px-3 text-right font-mono text-slate-300">${Number(t.volume || 0).toFixed(2)}</td>
+                        <td class="py-2 px-3 text-right font-mono text-slate-400 whitespace-nowrap">${openP} &rarr; ${closeP}</td>
+                        <td class="py-2 px-3 text-right font-mono font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtMoney(pnl, cur)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderKPIs();
+            renderChart();
+            renderProviders();
+            renderPositions();
+            renderTrades();
+        });
+    </script>
+</body>
+</html>
